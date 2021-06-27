@@ -1,0 +1,225 @@
+swagger: "2.0"
+
+info:
+  version: 1.0.0
+  title: NuEIP API proposal
+
+schemes:
+  - http
+  - https
+
+basePath: /api
+consumes: [application/json]
+produces: [application/json]
+
+securityDefinitions:
+  api_key:
+    type: apiKey
+    in: header
+    name: x-api-key
+
+security:
+  - api_key: []
+
+tags:
+  - name: product
+    description: 產品
+  - name: category
+    description: 目錄
+
+definitions:
+  Product:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: 產品編號
+      name:
+        type: string
+        description: 產品名稱
+      budget:
+        type: integer
+        description: 產品成本
+      price:
+        type: integer
+        description: 產品售價
+      description:
+        type: string
+        description: 產品說明
+      isSale:
+        type: integer
+        description: 是否上架
+      startSaleTime:
+        type: string
+        format: date-time
+        description: 開始販售時間
+      endSaleTime:
+        type: string
+        format: date-time
+        description: 結束販售時間
+    required:
+      - id
+      - name
+      - description
+  
+  Category:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: 目錄編號
+      name:
+        type: string
+        description: 目錄名稱
+      isVisible:
+        type: integer
+        description: 是否隱藏
+    required:
+      - id
+      - name
+paths:
+  /product:
+    post:
+      summary: 新增產品
+      tags: [product]
+      operationId: CreateProduct
+      security:
+        - api_key: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Product"
+      responses:
+        200:
+          description: OK
+    get:
+      summary: 取得產品資訊
+      tags: [product]
+      operationId: GetProduct
+      security:
+        - api_key: []
+      parameters:
+        - in: query
+          name: id
+          type: integer
+          description: 產品編號
+        - in: query
+          name: name
+          type: string
+          description: 產品名稱
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/Product"
+  /product/id/{id}:
+    patch:
+      summary: 更改產品
+      tags: [product]
+      operationId: UpdateProduct
+      security:
+        - api_key: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: 產品編號
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Product"
+      responses:
+        200:
+          description: OK
+    delete:
+      summary: 刪除產品
+      tags: [product]
+      operationId: DeleteProduct
+      security:
+        - api_key: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: 產品編號
+      responses:
+        200:
+          description: OK
+          
+  /category:
+    post:
+      summary: 新增產品目錄
+      tags: [category]
+      operationId: CreateCategory
+      security:
+        - api_key: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Category"
+      responses:
+        200:
+          description: OK
+    get:
+      summary: 取得目錄資訊
+      tags: [category]
+      operationId: GetCategory
+      security:
+        - api_key: []
+      parameters:
+        - in: query
+          name: id
+          type: integer
+          description: 目錄編號
+        - in: query
+          name: name
+          type: string
+          description: 目錄名稱
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/Category"
+  /category/id/{id}:
+    patch:
+      summary: 更改目錄
+      tags: [category]
+      operationId: UpdateCategory
+      security:
+        - api_key: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: 目錄編號
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Category"
+      responses:
+        200:
+          description: OK
+    delete:
+      summary: 刪除目錄
+      tags: [category]
+      operationId: DeleteCategory
+      security:
+        - api_key: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          required: true
+          description: 目錄編號
+      responses:
+        200:
+          description: OK
