@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -12,9 +11,12 @@ import (
 	"github.com/angelinahung/product-category/db"
 )
 
-func main() {
-	fmt.Println("-- Welcome to NuEIP API --")
+var (
+	tableProduct = "product"
+	tableCategory = "category"
+)
 
+func main() {
 	sqlDB, err := sql.Open("mysql", "root:@tcp(localhost:3306)/product_category")
 	if err != nil {
 		panic(err.Error())
@@ -25,11 +27,21 @@ func main() {
 
 	// creates a new instance of a mux router
 	myRouter := mux.NewRouter().StrictSlash(true)
-	myRouter.HandleFunc("/product", db.CreateProduct(sqlDB, "product")).Methods("POST")
-	myRouter.HandleFunc("/product", db.QueryProducts(sqlDB, "product")).Methods("GET")
+
+	// product CRUD
+	myRouter.HandleFunc("/product", db.CreateProduct(sqlDB,  tableProduct)).Methods("POST")
+	myRouter.HandleFunc("/product", db.QueryProducts(sqlDB, tableProduct)).Methods("GET")
+	myRouter.HandleFunc("/product/id/{id}", db.UpdateProduct(sqlDB, tableProduct)).Methods("PATCH")
+	myRouter.HandleFunc("/product/id/{id}", db.DeleteProduct(sqlDB,  tableProduct)).Methods("DELETE")
+
+	// category CRUD
+	myRouter.HandleFunc("/category", db.CreateCategory(sqlDB, tableCategory)).Methods("POST")
+	myRouter.HandleFunc("/category", db.QueryCategories(sqlDB, tableCategory)).Methods("GET")
+	myRouter.HandleFunc("/category/id/{id}", db.UpdateCategory(sqlDB, tableCategory)).Methods("PATCH")
+	myRouter.HandleFunc("/category/id/{id}", db.DeleteCategory(sqlDB, tableCategory)).Methods("DELETE")
 
 	// finally, instead of passing in nil, we want
 	// to pass in our newly created router as the second
 	// argument
-	log.Fatal(http.ListenAndServe(":6666", myRouter))
+	log.Fatal(http.ListenAndServe(":8000", myRouter))
 }
