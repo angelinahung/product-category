@@ -28,6 +28,7 @@ type Product struct {
 
 var timeFormat = "2006-01-02 15:04:05"
 
+// IsBadRequest for required request validation
 func (p Product) IsBadRequest() bool {
 	if p.ID <= 0 ||
 		p.Name == "" ||
@@ -39,7 +40,8 @@ func (p Product) IsBadRequest() bool {
 	return false
 }
 
-func (p Product) IsRquired() bool {
+// IsRequired to validate data range / allowed value
+func (p Product) IsRequired() bool {
 	if p.Budget > p.Price ||
 		p.EndSaleTime.Before(p.StartSaleTime) {
 		return false
@@ -66,7 +68,7 @@ func CreateProduct(db *sql.DB, tableName string) http.HandlerFunc {
 		startSaleTime := product.StartSaleTime.Format(timeFormat)
 		endSaleTime := product.EndSaleTime.Format(timeFormat)
 
-		if !product.IsRquired() {
+		if !product.IsRequired() {
 			http.Error(w, "product budget must less than product price! and "+
 				"start sale time must be <= end sale time!", http.StatusPreconditionFailed)
 			return

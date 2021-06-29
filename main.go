@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	tableProduct = "product"
+	tableProduct  = "product"
 	tableCategory = "category"
 )
 
@@ -29,10 +29,10 @@ func main() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
 	// product CRUD
-	myRouter.HandleFunc("/product", db.CreateProduct(sqlDB,  tableProduct)).Methods("POST")
+	myRouter.HandleFunc("/product", db.CreateProduct(sqlDB, tableProduct)).Methods("POST")
 	myRouter.HandleFunc("/product", db.QueryProducts(sqlDB, tableProduct)).Methods("GET")
 	myRouter.HandleFunc("/product/id/{id}", db.UpdateProduct(sqlDB, tableProduct)).Methods("PATCH")
-	myRouter.HandleFunc("/product/id/{id}", db.DeleteProduct(sqlDB,  tableProduct)).Methods("DELETE")
+	myRouter.HandleFunc("/product/id/{id}", db.DeleteProduct(sqlDB, tableProduct)).Methods("DELETE")
 
 	// category CRUD
 	myRouter.HandleFunc("/category", db.CreateCategory(sqlDB, tableCategory)).Methods("POST")

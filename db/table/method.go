@@ -1,6 +1,7 @@
 package table
 
+// Table methods
 type Table interface {
 	IsBadRequest() bool
-	IsRquired() bool
+	IsRequired() bool
 }

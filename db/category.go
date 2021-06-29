@@ -20,6 +20,7 @@ type Category struct {
 	IsInvisible int16  `json:"is_invisible,omitempty"`
 }
 
+// IsBadRequest for required request validation
 func (c Category) IsBadRequest() bool {
 	if c.ID <= 0 ||
 		c.Name == "" {
@@ -28,7 +29,8 @@ func (c Category) IsBadRequest() bool {
 	return false
 }
 
-func (c Category) IsRquired() bool {
+// IsRequired to validate data range / allowed value
+func (c Category) IsRequired() bool {
 	return true
 }
 
