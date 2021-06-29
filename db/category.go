@@ -18,6 +18,8 @@ type Category struct {
 	ID          int64  `json:"ID"`
 	Name        string `json:"name"`
 	IsInvisible int16  `json:"is_invisible,omitempty"`
+
+	ParentID int64 `json:"parent_id"` // 上層目錄
 }
 
 // IsBadRequest for required request validation
@@ -35,6 +37,7 @@ func (c Category) IsRequired() bool {
 }
 
 // CreateCategory 新增目錄
+// TODO: 檢查新增新目錄的上層目錄是否有產品list, 若有產品清單故不允許新增
 func CreateCategory(db *sql.DB, tableName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reqBody, _ := ioutil.ReadAll(r.Body)
@@ -51,12 +54,13 @@ func CreateCategory(db *sql.DB, tableName string) http.HandlerFunc {
 		}
 
 		sql := fmt.Sprintf(`INSERT INTO %s
-			(id, name, is_invisible) 
-			VALUES (?,?,?) `, tableName)
+			(id, name, is_invisible, parent_id) 
+			VALUES (?,?,?,?) `, tableName)
 		result, err := db.Exec(sql,
 			category.ID,
 			category.Name,
 			category.IsInvisible,
+			category.ParentID,
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -125,6 +129,8 @@ func QueryCategories(db *sql.DB, tableName string) http.HandlerFunc {
 }
 
 // UpdateCategory 更改目錄
+// 必須給上層目錄,否這更新失敗
+// TODO: 檢查該目錄修改是否違反 最多5層目錄的限制
 func UpdateCategory(db *sql.DB, tableName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -151,6 +157,10 @@ func UpdateCategory(db *sql.DB, tableName string) http.HandlerFunc {
 		if category.IsInvisible > -1 {
 			sets = append(sets, "is_invisible = ?")
 			params = append(params, category.IsInvisible)
+		}
+		if category.ParentID > -1 {
+			sets = append(sets, "parent_id = ?")
+			params = append(params, category.ParentID)
 		}
 		for i, set := range sets {
 			sb.WriteString(set)
@@ -180,6 +190,7 @@ func UpdateCategory(db *sql.DB, tableName string) http.HandlerFunc {
 }
 
 // DeleteCategory 刪除目錄
+// TODO: 檢查要刪除的目錄是否有下層目錄/產品清單
 func DeleteCategory(db *sql.DB, tableName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)

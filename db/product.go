@@ -24,6 +24,8 @@ type Product struct {
 	IsSale        int16     `json:"is_sale,omitempty"`
 	StartSaleTime time.Time `json:"start_sale_time"`
 	EndSaleTime   time.Time `json:"end_sale_time"`
+
+	CategoryID int64 `json:"category_id"` //FK
 }
 
 var timeFormat = "2006-01-02 15:04:05"
@@ -75,8 +77,8 @@ func CreateProduct(db *sql.DB, tableName string) http.HandlerFunc {
 		}
 
 		sql := fmt.Sprintf(`INSERT INTO %s
-			(id, name, budget, price, description, is_sale, start_sale_time, end_sale_time) 
-			VALUES (?,?,?,?,?,?,?,?) `, tableName)
+			(id, name, budget, price, description, is_sale, start_sale_time, end_sale_time, category_id) 
+			VALUES (?,?,?,?,?,?,?,?,?) `, tableName)
 		result, err := db.Exec(sql,
 			product.ID,
 			product.Name,
@@ -86,6 +88,7 @@ func CreateProduct(db *sql.DB, tableName string) http.HandlerFunc {
 			product.IsSale,
 			startSaleTime,
 			endSaleTime,
+			product.CategoryID,
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -145,7 +148,8 @@ func QueryProducts(db *sql.DB, tableName string) http.HandlerFunc {
 				&product.Description,
 				&product.IsSale,
 				&startSaleTime,
-				&endSaleTime); err != nil {
+				&endSaleTime,
+				&product.CategoryID); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -218,6 +222,10 @@ func UpdateProduct(db *sql.DB, tableName string) http.HandlerFunc {
 		if !product.EndSaleTime.IsZero() {
 			sets = append(sets, "end_sale_time = ?")
 			params = append(params, product.EndSaleTime.Format(timeFormat))
+		}
+		if product.CategoryID > -1 {
+			sets = append(sets, "category_id = ?")
+			params = append(params, product.CategoryID)
 		}
 		for i, set := range sets {
 			sb.WriteString(set)

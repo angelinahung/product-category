@@ -2,13 +2,17 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 
 	"github.com/angelinahung/product-category/db"
+	"github.com/angelinahung/product-category/pkg/config"
+	"github.com/angelinahung/product-category/pkg/logger"
 )
 
 var (
@@ -17,9 +21,15 @@ var (
 )
 
 func main() {
-	sqlDB, err := sql.Open("mysql", "root:@tcp(localhost:3306)/product_category")
+	// 1. Parse configurations
+	config.ParseConfigurations()
+
+	// 2. logger initialization.
+	logger.Init()
+
+	sqlDB, err := sql.Open("mysql", config.Options.DBSource)
 	if err != nil {
-		panic(err.Error())
+		zap.L().Fatal("failed to connect to DB: ", zap.Error(err))
 	}
 	// defer the close till after the main function has finished
 	// executing
@@ -43,5 +53,7 @@ func main() {
 	// finally, instead of passing in nil, we want
 	// to pass in our newly created router as the second
 	// argument
-	log.Fatal(http.ListenAndServe(":8000", myRouter))
+	addr := fmt.Sprintf("%s:%d", config.Options.Host, config.Options.Port)
+	zap.L().Info("serving RESTful API ...", zap.String("address", addr))
+	log.Fatal(http.ListenAndServe(addr, myRouter))
 }

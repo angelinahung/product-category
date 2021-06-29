@@ -57,6 +57,9 @@ definitions:
         type: string
         format: date-time
         description: 結束販售時間
+      categoryID:
+        type: integer
+        description: 目錄編號
     required:
       - id
       - name
@@ -71,9 +74,12 @@ definitions:
       name:
         type: string
         description: 目錄名稱
-      isVisible:
+      isInvisible:
         type: integer
         description: 是否隱藏
+      paremtID:
+        type: integer
+        description: 上層目錄編號
     required:
       - id
       - name
