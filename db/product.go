@@ -51,7 +51,32 @@ func (p Product) IsRequired() bool {
 	return true
 }
 
+// IsProductsAvailableOnCategory 檢查是否該目錄有產品清單
+func IsProductsAvailableOnCategory(db *sql.DB, tableName string, category_id int64) (bool, error) {
+	sql := fmt.Sprintf("SELECT id FROM %s WHERE category_id = ?", tableName)
+	rows, err := db.Query(sql, category_id)
+	if err != nil {
+		return false, err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return false, err
+		}
+		if id > 0 {
+			return false, nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // CreateProduct 新增產品
+// TODO: 檢查是否為最低level category
 func CreateProduct(db *sql.DB, tableName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		reqBody, _ := ioutil.ReadAll(r.Body)
@@ -76,6 +101,15 @@ func CreateProduct(db *sql.DB, tableName string) http.HandlerFunc {
 			return
 		}
 
+		ok, err := isTheMostLowerCategory(db, "category", product.CategoryID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(w, "must create products on the most lower level category", http.StatusBadRequest)
+			return
+		}
 		sql := fmt.Sprintf(`INSERT INTO %s
 			(id, name, budget, price, description, is_sale, start_sale_time, end_sale_time, category_id) 
 			VALUES (?,?,?,?,?,?,?,?,?) `, tableName)

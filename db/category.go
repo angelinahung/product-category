@@ -36,6 +36,86 @@ func (c Category) IsRequired() bool {
 	return true
 }
 
+// // CategoryLevelOne lists the most upper category IDs
+// func CategoryLevelOne(db *sql.DB, tableName string) ([]int64, error) {
+// 	sql := fmt.Sprintf("SELECT id FROM %s WHERE parent_id=?", tableName)
+// 	rows, err := db.Query(sql, 0) // 找到最上層目錄
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	//切記用完都要做 Close
+// 	defer rows.Close()
+// 	var ids []int64
+// 	for rows.Next() {
+// 		var category Category
+// 		if err := rows.Scan(
+// 			&category.ID,
+// 		); err != nil {
+// 			return nil, err
+// 		}
+// 		ids = append(ids, category.ID)
+// 	}
+// 	if err := rows.Err(); err != nil {
+// 		return nil, err
+// 	}
+// 	return ids, nil
+// }
+
+// 新增目錄之前檢查即將新增的目錄的父目錄是否已超過5層
+func isParentIDAvailable(db *sql.DB, tableName string, parentID int64) (bool, error) {
+	sql := fmt.Sprintf("SELECT id FROM %s WHERE parent_id=?", tableName)
+	rows, err := db.Query(sql, parentID)
+	if err != nil {
+		return false, err
+	}
+
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(
+			&id,
+		); err != nil {
+			return false, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	if len(ids) > 4 {
+		return false, nil
+	}
+	return true, nil
+}
+
+// 檢查是否其他category的parentID = id
+func isTheMostLowerCategory(db *sql.DB, tableName string, id int64) (bool, error) {
+	sql := fmt.Sprintf("SELECT id FROM %s WHERE parent_id=?", tableName)
+	rows, err := db.Query(sql, id)
+	if err != nil {
+		return false, err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(
+			&id,
+		); err != nil {
+			return false, err
+		}
+		if id > 0 {
+			return false, nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // CreateCategory 新增目錄
 // TODO: 檢查新增新目錄的上層目錄是否有產品list, 若有產品清單故不允許新增
 func CreateCategory(db *sql.DB, tableName string) http.HandlerFunc {
@@ -50,6 +130,26 @@ func CreateCategory(db *sql.DB, tableName string) http.HandlerFunc {
 
 		if category.IsBadRequest() {
 			http.Error(w, "fill in required field {id, name} plz", http.StatusBadRequest)
+			return
+		}
+
+		ok, err := isParentIDAvailable(db, tableName, category.ParentID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(w, "each category is limited to 5 level only", http.StatusBadRequest)
+			return
+		}
+
+		ok, err = IsProductsAvailableOnCategory(db, "product", category.ParentID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			http.Error(w, "the corresponding parent category have products on it", http.StatusBadRequest)
 			return
 		}
 
@@ -114,7 +214,8 @@ func QueryCategories(db *sql.DB, tableName string) http.HandlerFunc {
 			if err := rows.Scan(
 				&category.ID,
 				&category.Name,
-				&category.IsInvisible); err != nil {
+				&category.IsInvisible,
+				&category.ParentID); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
